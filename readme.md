@@ -234,6 +234,7 @@ SOCIAL_AUTH_URL_NAMESPACE = 'users:social'
 
 LOGIN_URL = 'users/login/auth0'
 LOGIN_REDIRECT_URL = '/dashboard'
+LOGOUT_URL = "/"
 
 ```
 
@@ -248,3 +249,189 @@ save
 Settings > General > Langurges > Default Language > Japansese
 Save
 
+app/urls.py を以下のように編集
+```
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('users/', include('users.urls')),
+    path('my_app/', include('my_app.urls')),
+]
+```
+
+users/urls.py を以下通りに作成
+```
+app_name = "users"
+urlpatterns = [
+    path('', include('django.contrib.auth.urls')),
+    path('', include('social_django.urls')),
+    path('logout', logout_auth0, name="logout"),
+]
+```
+
+users/views.py を以下のように記述
+```
+from django.contrib.auth import logout as log_out
+from django.conf import settings
+from django.http import HttpResponseRedirect
+from urllib.parse import urlencode
+
+from app.settings import LOGOUT_URL
+
+
+def logout_auth0(request):
+    log_out(request)
+    return_to = urlencode({'returnTo': request.build_absolute_uri(LOGOUT_URL)})
+    logout_url = 'https://%s/v2/logout?client_id=%s&%s' % \
+                 (settings.SOCIAL_AUTH_AUTH0_DOMAIN, settings.SOCIAL_AUTH_AUTH0_KEY, return_to)
+    return HttpResponseRedirect(logout_url)
+```
+
+
+users/auth0backend.pyを以下の通り作成
+```
+from urllib import request
+from jose import jwt
+from social_core.backends.oauth import BaseOAuth2
+
+
+class Auth0(BaseOAuth2):
+    """Auth0 OAuth authentication backend"""
+    name = 'auth0'
+    SCOPE_SEPARATOR = ' '
+    ACCESS_TOKEN_METHOD = 'POST'
+    REDIRECT_STATE = False
+    EXTRA_DATA = [
+        ('picture', 'picture'),
+        ('email', 'email')
+    ]
+
+    def authorization_url(self):
+        return 'https://' + self.setting('DOMAIN') + '/authorize'
+
+    def access_token_url(self):
+        return 'https://' + self.setting('DOMAIN') + '/oauth/token'
+
+    def get_user_id(self, details, response):
+        """Return current user id."""
+        return details['user_id']
+
+    def get_user_details(self, response):
+        # Obtain JWT and the keys to validate the signature
+        id_token = response.get('id_token')
+        jwks = request.urlopen('https://' + self.setting('DOMAIN') + '/.well-known/jwks.json')
+        issuer = 'https://' + self.setting('DOMAIN') + '/'
+        audience = self.setting('KEY')  # CLIENT_ID
+        payload = jwt.decode(id_token, jwks.read(), algorithms=['RS256'], audience=audience, issuer=issuer)
+        return {'username': payload['nickname'],
+                'full_name': payload['name'],
+                'picture': payload['picture'],
+                'user_id': payload['sub'],
+                'email': payload['email'],
+                'email_verified': payload['email_verified']}
+
+```
+
+templatesを作成
+templatesフォルダを作成、その配下にmy_appフォルダを作成
+
+ログインページ(トップページ)
+templates/index.html
+
+```
+<html>
+<head>
+</head>
+<body>
+    <p>トップページ</p>
+    <a href="{% url 'users:login' %}auth0">ログイン</a>
+</body>
+</html>
+```
+
+ログイン後ページ
+templates/my_app/dashboard.html
+```
+<html>
+<head>
+</head>
+<body>
+    <p>[ログイン中です] email: {{ user.email }}</p>
+    <a href="{% url 'users:logout' %}">ログアウト</a>
+</body>
+</html>
+```
+
+ログイン要求ページ
+templates/login_required.html
+```
+<html>
+<head>
+</head>
+<body>
+    <p>ログインが必要なページです。ログインしてください。</p>
+    <a href="{% url 'users:login' %}auth0">ログイン</a>
+</body>
+</html>
+```
+
+
+```
+settings.py のTEMPLATEDに以下を記述
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, "templates")], # この行をそのままコピー
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+```
+
+ログインしていないと表示できないようにする
+
+app/middleware.py を以下の通りに作成
+```
+from django.http import HttpResponseRedirect
+from django.utils.deprecation import MiddlewareMixin 
+
+class AuthMiddleware(MiddlewareMixin): 
+    def process_response(self, request, response):
+        '''
+        認証系処理
+        '''
+        # トップ画面、ログイン処理画面はスルー
+        if request.path == "/" or request.path.find("auth0") >= 1 or request.path == "/login_required" or request.path.find("logout") >= 1:
+            return response
+        
+        # ログインしていない場合はログイン要求ページにリダイレクト
+        if not request.user.is_authenticated: 
+            return HttpResponseRedirect('/login_required') 
+        
+        return response
+
+```
+
+settings.py のMIDDLEWARE に以下の通りに追記
+```
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'app.middleware.AuthMiddleware' # add
+]
+```
