@@ -16,6 +16,18 @@ INSTALLED_APPS = [
     'my_app', # add
     'users' # add
 ]
+
+～中略～
+
+LANGUAGE_CODE = 'ja-jp' 
+
+TIME_ZONE = 'Asia/Tokyo'
+
+USE_I18N = True
+
+USE_L10N = True
+
+USE_TZ = False
 ```
 
 python manage.py runserver
@@ -227,6 +239,11 @@ LOGIN_REDIRECT_URL = '/dashboard'
 
 Application URIs > Allowed Callback URLs
 http://127.0.0.1:8000/users/complete/auth0
+
+Application URIs > Allowed Logout URLs
+http://127.0.0.1:8000/
+
+save
 
 Settings > General > Langurges > Default Language > Japansese
 Save
