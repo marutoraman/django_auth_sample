@@ -3,6 +3,21 @@ pip install django
 django-admin startproject app .
 python manage.py startapp my_app
 python manage.py startapp users
+
+settings.pyのINSTALLED_APPSに
+```
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'my_app', # add
+    'users' # add
+]
+```
+
 python manage.py runserver
 
 users/models.pyを以下の通りに編集
@@ -150,3 +165,38 @@ python manage.py runserver
 
 以下にアクセスしてログインできればOK
 http://127.0.0.1:8000/admin
+
+Auth0設定
+settings.py
+INSTALLED_APPS に
+'social_django',
+を追加
+```
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'social_django', # add
+    'my_app',
+    'users'
+]
+```
+
+Applications > Applications > Create Application
+Name: 任意
+Choose an application type: Regular Web Applications
+Create
+Django
+Settings
+
+Domain
+Client ID
+Client Secret
+を控える
+
+Settings > General > Langurges > Default Language > Japansese
+Save
+
