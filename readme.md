@@ -183,6 +183,8 @@ INSTALLED_APPS = [
     'my_app',
     'users'
 ]
+ 
+
 ```
 
 Applications > Applications > Create Application
@@ -196,6 +198,35 @@ Domain
 Client ID
 Client Secret
 を控える
+
+settings.py に以下を追記（Domain等は控えたものを入れる）
+```
+# Auth0
+SOCIAL_AUTH_TRAILING_SLASH = False  # Remove trailing slash from routes
+SOCIAL_AUTH_AUTH0_DOMAIN = '<Domain>'
+SOCIAL_AUTH_AUTH0_KEY = '<Client ID>'
+SOCIAL_AUTH_AUTH0_SECRET = '<Client Secret>'
+
+SOCIAL_AUTH_AUTH0_SCOPE = [
+    'openid',
+    'profile',
+    'email'
+]
+
+AUTHENTICATION_BACKENDS = {
+    'users.auth0backend.Auth0',
+    'django.contrib.auth.backends.ModelBackend'
+}
+
+SOCIAL_AUTH_URL_NAMESPACE = 'users:social'     
+
+LOGIN_URL = 'users/login/auth0'
+LOGIN_REDIRECT_URL = '/dashboard'
+
+```
+
+Application URIs > Allowed Callback URLs
+http://127.0.0.1:8000/users/complete/auth0
 
 Settings > General > Langurges > Default Language > Japansese
 Save
