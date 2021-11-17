@@ -1,8 +1,20 @@
-python -m venv vnev
+```
+python -m venv vnev  
+```
+```
 pip install django
+```
+```
 django-admin startproject app .
+```
+
+```
 python manage.py startapp my_app
+```
+
+```
 python manage.py startapp users
+```
 
 settings.pyのINSTALLED_APPSに
 ```
@@ -210,6 +222,18 @@ Domain
 Client ID
 Client Secret
 を控える
+
+Branding > Unicersal Login > Customization
+Company Logo
+Primary Color
+PAge Background Color
+を自由に設定
+
+デフォルトではパスワードの要求強度が強いので、必要に応じて以下を設定変更
+Authentication > Database > Username-Password-Authentication > Password Policy > Password Strength
+下から２番目　（８文字以上ならOK）
+Save Changes
+
 
 settings.py に以下を追記（Domain等は控えたものを入れる）
 ```
