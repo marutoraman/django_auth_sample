@@ -182,6 +182,12 @@ settings.pyを以下を追記
 AUTH_USER_MODEL = 'users.User'
 ```
 
+マイグレーション
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+
 管理者ユーザーを作成
 python manage.py createsuperuser
 
@@ -189,6 +195,8 @@ python manage.py runserver
 
 以下にアクセスしてログインできればOK
 http://127.0.0.1:8000/admin
+
+pip install social-auth-app-django
 
 Auth0設定
 settings.py
