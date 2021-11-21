@@ -295,6 +295,8 @@ urlpatterns = [
 
 users/urls.py を以下通りに作成
 ```
+from django.urls import path, include
+
 app_name = "users"
 urlpatterns = [
     path('', include('django.contrib.auth.urls')),
